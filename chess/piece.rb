@@ -1,5 +1,6 @@
 class Piece
  def initialize
+   'X'
  end
 end
 

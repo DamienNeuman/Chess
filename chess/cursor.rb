@@ -1,4 +1,6 @@
 require "io/console"
+class InvalidPositionError < StandardError
+end
 
 KEYMAP = {
   " " => :space,
@@ -32,16 +34,22 @@ MOVES = {
 
 class Cursor
 
-  attr_reader :cursor_pos, :board
+  attr_reader :cursor_pos, :board, :selected
 
   def initialize(cursor_pos, board)
     @cursor_pos = cursor_pos
     @board = board
+    @selected = false
   end
 
   def get_input
-    key = KEYMAP[read_char]
-    handle_key(key)
+    begin
+      key = KEYMAP[read_char]
+      handle_key(key)
+    rescue InvalidPositionError
+      puts "Position not on board, try again."
+      retry
+    end
   end
 
   private
@@ -76,8 +84,25 @@ class Cursor
   end
 
   def handle_key(key)
+    case key
+    when :return, :space
+      @cursor_pos
+      @selected ? (@selected = false) : (@selected = true)
+    when :left, :right, :up, :down
+        update_pos(MOVES[key])
+    when :ctrl_c
+      Process.exit(0)
+    end
   end
 
   def update_pos(diff)
+    x1,y1 = @cursor_pos
+    x2,y2 = diff
+    new_pos = [(x1 + x2), (y1 + y2)]
+    unless @board.in_bound(new_pos)
+      raise InvalidPositionError
+    end
+    @cursor_pos = new_pos
+
   end
 end
